@@ -30,6 +30,12 @@ import pymc as pm
 # ## 1. Data compilation
 
 # %%
+# assumptions
+# source - https://www.icaew.com/insights/viewpoints-on-the-news/2022/sept-2022/chart-of-the-week-energy-price-cap-update
+GAS_PRICE_PER_KWH = 3.3
+ELECTRIC_PRICE_PER_KWH = 19.0 
+
+# %%
 # look at the headline dataset of consumption by LSOA
 main_data = pd.read_csv("../data/raw/LSOA Energy Consumption Data.csv")
 
@@ -44,6 +50,9 @@ main_data.columns
 
 # %%
 main_data["Shape_Area"].values
+
+# %%
+main_data["Local Authority Name"].unique()
 
 # %%
 # look at household size data
