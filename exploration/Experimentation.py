@@ -67,6 +67,27 @@ household_size[household_size["Number of rooms (Valuation Office Agency) (6 cate
 # %%
 building_age = pd.read_csv("../data/raw/CTSOP_4_1_2021.csv")
 
+# %%
+# Library to work with netCDF files
+from netCDF4 import Dataset
+
+file_name = "../data/raw/tas_hadukgrid_uk_60km_ann_202101-202112.nc"
+file_id = Dataset(file_name)
+
+latitude = file_id.variables["latitude"][:,:]
+longitude = file_id.variables["longitude"][:,:]
+temps = file_id.variables["tas"][:,:]
+
+lats = [np.mean(x) for x in latitude]
+longs = [np.mean(x) for x in longitude] 
+ts = [np.mean(x) for x in temps[0]]
+temp_data = pd.DataFrame({"latitude": lats,
+                          "longitude": longs,
+                          "temperature": ts}
+                        )
+
+temp_data = temp_data[temp_data.temperature > 0]
+
 # %% [markdown]
 # ## 2. Analysis
 
