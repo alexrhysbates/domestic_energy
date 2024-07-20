@@ -25,6 +25,7 @@
 import numpy as np
 import pandas as pd
 import pymc as pm
+import geopy
 
 # %% [markdown]
 # ## 1. Data compilation
@@ -47,12 +48,6 @@ main_data['Lower Layer Super Output Area (LSOA) Code'].nunique()
 
 # %%
 main_data.columns
-
-# %%
-main_data["Shape_Area"].values
-
-# %%
-main_data["Local Authority Name"].unique()
 
 # %%
 # look at household size data
@@ -89,7 +84,42 @@ temp_data = pd.DataFrame({"latitude": lats,
 temp_data = temp_data[temp_data.temperature > 0]
 
 # %% [markdown]
+# ### Combining and generating features
+
+# %%
+# feature generation
+main_data["pct_electric"] = main_data['Electricity Consumption (kWh)'] / main_data['Total Energy Consumption (kWh)']
+main_data["coords"] = [(lat, long) for lat, long in zip(main_data.Latitude, main_data.Longitude)]
+
+# %%
+df = main_data[['Local Authority Name', 'Local Authority Code', 'MSOA Name',
+       'Middle Layer Super Output Area (MSOA) Code', 'LSOA Name',
+       'Lower Layer Super Output Area (LSOA) Code', 'coords',
+       'pct_electric', 'Average Energy Consumption per Person (kWh)']]
+
+# %%
+df.columns = ['LA_name', 'LA', 'MSOA_ame',
+       'MSOA', 'LSOA_name',
+       'LSOA', 'coords',
+       'pct_electric', 'energy_consumption_per_person']
+
+# %%
+# add temperature data
+coords =  [(lat, long) for lat, long in zip(temp_data.latitude, temp_data.longitude)]
+temp_dict = {co:t for co,t in zip(coords, temp_data.temperature)}
+
+def find_closest_temp_measurement(this_point):
+    return temp_dict[min(temp_dict.keys(), key=lambda x: geopy.distance.geodesic(this_point, x))]
+
+df["temperature"] = [find_closest_temp_measurement(x) for x in df.coords]
+
+# %%
+df.temperaure.value_counts()
+
+# %% [markdown]
 # ## 2. Analysis
+
+# %%
 
 # %%
 
