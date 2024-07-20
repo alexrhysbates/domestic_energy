@@ -137,10 +137,14 @@ df = df.merge(voting_data, on="LA", how="left")
 df.shape
 
 # %%
-voting_data["pct_green"].hist()
+# add employment status
+economic_activity = pd.read_csv("../data/raw/economic_activity.csv")
+economic_activity = economic_activity[["Area code", "Economically active: \nIn employment \n(including full-time students), \n2021\n(percent)"]]
+economic_activity.columns = ["LA", "pct_people_economically_active"]
+df = df.merge(economic_activity, on="LA", how="left")
 
 # %%
-voting_data
+df.shape
 
 # %%
 
