@@ -47,9 +47,6 @@ main_data.shape
 main_data['Lower Layer Super Output Area (LSOA) Code'].nunique()
 
 # %%
-main_data.columns
-
-# %%
 # look at household size data
 household_size = pd.read_csv("../data/raw/RM202-Household-Size-By-Number-Of-Rooms-2021-lsoa-ONS.csv")
 
@@ -114,7 +111,38 @@ def find_closest_temp_measurement(this_point):
 df["temperature"] = [find_closest_temp_measurement(x) for x in df.coords]
 
 # %%
-df.temperaure.value_counts()
+# compute energy cost
+df["energy_cost"] = [ELECTRIC_PRICE_PER_KWH * x + GAS_PRICE_PER_KWH * (1-x) for x in df["pct_electric"]]
+
+# %%
+# add income data
+income_data = pd.read_csv("../data/raw/net_income_after_housing_costs.csv")
+income_data = income_data[["MSOA code", "Net annual income after housing costs (£)"]].copy()
+income_data.columns = ["MSOA", "net_income"]
+df = df.merge(income_data, on="MSOA", how="left")
+
+# %%
+df.shape
+
+# %%
+# add green data
+voting_data = pd.read_csv("../data/raw/CBP09228_detailed_results_England_elections.csv")
+voting_data["pct_green"] = voting_data["Green"] / voting_data["Total"]
+voting_data["green_council"] = voting_data["pct_green"] >= 0.1
+voting_data = voting_data[["ONS code", "green_council"]].copy()
+voting_data.columns = ["LA", "politically_green"]
+df = df.merge(voting_data, on="LA", how="left")
+
+# %%
+df.shape
+
+# %%
+voting_data["pct_green"].hist()
+
+# %%
+voting_data
+
+# %%
 
 # %% [markdown]
 # ## 2. Analysis
