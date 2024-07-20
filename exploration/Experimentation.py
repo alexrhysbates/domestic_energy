@@ -147,6 +147,14 @@ df = df.merge(economic_activity, on="LA", how="left")
 df.shape
 
 # %%
+# add in building data
+households = pd.read_csv("../data/raw/RM202-Household-Size-By-Number-Of-Rooms-2021-lsoa-ONS.csv")
+
+# %%
+households.rename(columns={"Lower layer Super Output Areas Code": "LSOA"}, inplace=True)
+
+# %%
+households["average_num_rooms"] = 
 
 # %% [markdown]
 # ## 2. Analysis

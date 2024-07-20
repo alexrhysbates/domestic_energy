@@ -1,23 +1,17 @@
 """
 Script to compile energy consumption data into a single csv file.
 
-Raw data can be found in raw_data.zip, extract before running this file.
+Raw data can be found in raw_data.zip, extract before running this file. The script works by picking up the raw data from a local "raw/" folder.
 
 Run `pip install -r requirements.txt` installs all necessary dependencies for this project.
 
-Features:
-*
-*
-*
-*
+General approach is to start with the "usmart" energy consumption dataset, and merge in new features from other datasets, joining on either the local area code, MSOA or LSOA
 
-Assumptions:
+Features (and associated assumptions):
 *
 *
 *
 *
-
-
 
 """
 
