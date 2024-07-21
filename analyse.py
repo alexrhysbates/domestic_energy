@@ -57,21 +57,22 @@ plt.close()
 
 
 ############# EXPLORATORY ANALYSIS ############################
+logging.info("\n\nExploratory analysis on dataset")
 logging.info("Plot a correlation heatmap of all the features in the dataset")
 logging.info("Compute correlations of all the feature columns and plot using a seaborn heatmap")
 corr_data = df.drop(columns=['LA', 'MSOA', 'LSOA'], axis=1).corr()
-corr_heatmap = sns.heatmap(corr_data, cmap="crest", annot=True) 
+corr_heatmap = sns.heatmap(corr_data, cmap="crest", annot=True)
+corr_heatmap.set_title("Correlations of features related to domestic energy consumption") 
 corr_heatmap.set(xlabel="", ylabel="")
 corr_heatmap.xaxis.tick_bottom()
 plt.xticks(rotation=90)
-plt.title("Correlations of features related to domestic energy consumption")
 logging.info("Saving plot to a local .png")
 plt.savefig("correlations_of_features.png", bbox_inches="tight")
 plt.close()
 
 logging.info("Plotting histogram of each variable, saving to local .png")
 df.hist(bins=20, figsize=(10,10), color="purple")
-plt.title("Distribution of features related to domestic energy consumption")
+plt.suptitle("Distribution of features related to domestic energy consumption")
 plt.savefig("histogram_of_features.png")
 plt.close()
 
