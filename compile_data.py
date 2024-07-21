@@ -174,8 +174,35 @@ df = df.merge(totals, on="LSOA", how="left")
 logger.info(f"Check dataset shape: {df.shape}")
 
 ####################### BUILDING TYPE DATA ##################################
+logger.info("\n\nAdding data on building type from gov.uk council tax dataset on stock of properties for 2021") 
+building_type = pd.read_csv("data/CTSOP_3_1_2021.csv")
+logger.info("Filtering down to LSOA only and all council tax bands, tidying up columns and replacing dodgy characters")
+building_type = building_type[(building_type.geography == "LSOA") & (building_type.band == "All")]
+building_type = building_type[["ecode", "bungalow_total", "flat_mais_total", "house_terraced_total",
+                         "house_semi_total", "house_detached_total", "all_properties"]]
+building_type = building_type.replace("-","0")
 
+logger.info("Define the number of 'exposed surfaces' per building type - assumption that flats are more energy-efficient for this reason")
+exposed_surfaces_per_type = {
+    "bungalow_total": 5,
+    "flat_mais_total": 2,
+    "house_terraced_total": 3,
+    "house_semi_total": 4,
+    "house_detached_total": 5
+}
 
+logger.info("Convert the building type count columns to integers")
+building_type[list(exposed_surfaces_per_type.keys())] = building_type[exposed_surfaces_per_type.keys()].astype(int)
+
+logger.info("Multiply building type count columns by the number of exposed surfaces to get totals")
+total_exposed_surfaces = building_type[list(exposed_surfaces_per_type.keys())].mul(exposed_surfaces_per_type).sum(axis=1)
+logger.info("Compute the average number of exposed surfaces for properties in that LSOA")
+building_type["home_exposed_surfaces"]  = [x / int(y) for x,y in zip(total_exposed_surfaces,building_type["all_properties"])]
+
+logger.info("Tidy up columns and merge with main dataset")
+building_type = building_type[["ecode", "home_exposed_surfaces"]]
+building_type.columns = ["LSOA", "home_exposed_surfaces"]
+df = df.merge(building_type, on="LSOA", how="left")
 logger.info(f"Check dataset shape: {df.shape}")
 
 ####################### BUILDING AGE DATA ###################################
