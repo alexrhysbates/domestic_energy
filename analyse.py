@@ -87,7 +87,5 @@ model_df = df[['LA', 'politically_green','temperature','energy_cost',
 logging.info("Clean the data, drop any rows with nulls assume data is missing at random due to merging on LSOA. Fix dtype issues")
 model_df.dropna(how='any',axis=0, inplace=True)
 model_df["net_income"] = model_df["net_income"].astype(float)
-logging.info("Normalise column-wise on numeric columns")
-model_df.iloc[:,2:] = model_df.iloc[:,1:].apply(lambda x: (x-x.mean())/ x.std(), axis=0)
 logging.info("Convert Local authority to a categorical code column that we can index into")
 model_df['LA'] = model_df['LA'].astype('category').cat.codes
