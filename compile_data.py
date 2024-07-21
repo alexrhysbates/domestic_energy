@@ -13,15 +13,15 @@ Target:
 * energy_consumption_per_person - from usmart dataset, by LSOA
 
 Features (and associated sources / definitions / assumptions):
-* net_income
-* energy_cost
-* temperature
-* politically_green
-* pct_economically_active
-* home_age
-* home_size
-* pct_home_occupancy
-* pct_houses_detatched
+* temperature - from HAD 60km grid temp measurement data. Link LSOA to closest avg temp at closest measurement point
+* energy_cost - taken from energy cap data, assume driven by relative use of electric vs gas within LSOA 
+* net_income - income after housing costs by MSOA, taken from ONS
+* politically_green - does local authority have > 10% Green party council? If so, assume eco-aware population
+* pct_economically_active - from ONS data by local authority, what % of people are in full time employment or students
+* home_size - average number of bedrooms in homes within LSOA, from Council Tax dataset
+* pct_home_occupancy - pct of bedrooms occupied - no. of occupants / home_size, also from Council Tax dataset
+* home_exposed_surfaces - derived from building type Council Tax dataset, detatched homes have 5 exposed surfaces, semis have 4 etc. Average for that LSOA.
+* home_age - average age of home in the LSOA, from same Council Tax dataset
 
 """
 
