@@ -49,10 +49,11 @@ We need to set a few assumptions on energy prices
 Taken from:
 https://www.icaew.com/insights/viewpoints-on-the-news/2022/sept-2022/chart-of-the-week-energy-price-cap-update
 
+Also set assumption for % of green vote that we define as making an area "green politically"
 """
 GAS_PRICE_PER_KWH = 3.3
 ELECTRIC_PRICE_PER_KWH = 19.0
-
+POLITICALLY_GREEN_THRESHOLD = 0.1
 
 """
 LOADING THE DATA
@@ -137,6 +138,16 @@ logging.info("Merge with main dataset")
 df = df.merge(income_data, on="MSOA", how="left")
 logging.info(f"Check dataset shape: {df.shape}")
 
+####################### ADD VOTING DATA ####################################
+logging.info("\n\nAdd in voting data from the 2021 local elections, find local authorities with high pct of Green vote")
+voting_data = pd.read_csv("data/CBP09228_detailed_results_England_elections.csv")
+logging.info("Find % of vote that is green, and compute which LAs exceed threshold")
+voting_data["pct_green"] = voting_data["Green"] / voting_data["Total"]
+voting_data["green_council"] = voting_data["pct_green"] >= POLITICALLY_GREEN_THRESHOLD
+logging.info("Tidy up columns and merge with main dataset")
+voting_data = voting_data[["ONS code", "green_council"]].copy()
+voting_data.columns = ["LA", "politically_green"]
+df = df.merge(voting_data, on="LA", how="left")
 
 ####################### ECONOMIC ACTIVITY DATA ##############################
 logging.info("\n\nAdding dataset on economic activity from ONS, by local authority")
@@ -253,7 +264,7 @@ building_age["home_age"]  = [2021-(x / y) for x,y in zip(build_year,  totals)]
 logging.info("Tidy up columns and merge with main dataset")
 building_age = building_age[["ecode", "home_age"]]
 building_age.columns = ["LSOA", "home_age"]
-df = df.merge(buildings2, on="LSOA", how="left")
+df = df.merge(building_age, on="LSOA", how="left")
 logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### WRITE CLEAN RESULTS TO CSV #############################
