@@ -35,8 +35,9 @@ except OSError as e:
     logging.error(f"No file found, try running compile_data.py first. \n{e}")
 
 
-logging.info("Cleaning up columns with any null values")
+logging.info("Cleaning up columns with any null values or incorrect dtypes")
 df["politically_green"] = [1 if x == True else 0 for x in df.politically_green]
+df["net_income"] = [int(x.replace(",","").strip()) for x in df.net_income]
 
 
 ############# PLOTTING ENERGY CONSUMPTION ON A MAP ############
@@ -53,6 +54,8 @@ plt.savefig('energy_consumption_per_person_by_uk_local_authority.png')
 
 
 ############# EXPLORATORY ANALYSIS ############################
-
+corr_data = df.drop(columns=['LA', 'MSOA', 'LSOA'], axis=1).corr()
+corr_heatmap = sns.heatmap(corr_data, cmap="YlGnBu", annot=True) 
+plt.savefig("correlations_of_features.png")
 
 ############# CAUSAL ANALYSIS #################################
