@@ -1,7 +1,9 @@
 geopandas
 geopy
 netCDF4
+matplotlib
 numpy
 pandas
 plotly
 pymc
+seaborn
