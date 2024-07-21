@@ -50,6 +50,7 @@ logging.info("Join shapefile with energy data, averaged by local authority, and 
 df_energy = df.groupby("LA")["energy_consumption_per_person"].mean().reset_index()
 las = las.merge(df_energy, on="LA", how="left")
 las.plot(column="energy_consumption_per_person", cmap="OrRd", edgecolor="k", legend=True)
+plt.title("Domestic energy consumption per person across the UK")
 logging.info("Saving plot to a local .png")
 plt.savefig('energy_consumption_per_person_by_uk_local_authority.png')
 plt.close()
@@ -63,8 +64,15 @@ corr_heatmap = sns.heatmap(corr_data, cmap="crest", annot=True)
 corr_heatmap.set(xlabel="", ylabel="")
 corr_heatmap.xaxis.tick_bottom()
 plt.xticks(rotation=90)
+plt.title("Correlations of features related to domestic energy consumption")
 logging.info("Saving plot to a local .png")
 plt.savefig("correlations_of_features.png", bbox_inches="tight")
+plt.close()
+
+logging.info("Plotting histogram of each variable, saving to local .png")
+df.hist(bins=20, figsize=(10,10), color="purple")
+plt.title("Distribution of features related to domestic energy consumption")
+plt.savefig("histogram_of_features.png")
 plt.close()
 
 ############# CAUSAL ANALYSIS #################################
