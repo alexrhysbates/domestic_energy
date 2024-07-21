@@ -33,6 +33,7 @@ Load relevant python packages and set up a logger
 """
 import logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 logger.info("Importing relevant python packages") 
 import numpy as np
@@ -65,13 +66,11 @@ logger.info(f"Data loaded, {len(df)} rows")
 logger.info("Tidying up the columns")
 df = df[['Local Authority Name', 'Local Authority Code', 'MSOA Name',
        'Middle Layer Super Output Area (MSOA) Code', 'LSOA Name',
-       'Lower Layer Super Output Area (LSOA) Code', 'coords',
-       'pct_electric', 'Average Energy Consumption per Person (kWh)']].copy()
+       'Lower Layer Super Output Area (LSOA) Code', 'Latitude', 'Longitude',
+       'Electricity Consumption (kWh)', 'Total Energy Consumption (kWh)',
+       'Average Energy Consumption per Person (kWh)']].copy()
 
-df.columns = ['LA_name', 'LA', 'MSOA_ame',
-       'MSOA', 'LSOA_name',
-       'LSOA', 'coords',
-       'pct_electric', 'energy_consumption_per_person']
+df.columns = ['LA_name', 'LA', 'MSOA_name','MSOA', 'LSOA_name','LSOA','Latitude', 'Longitude','elec_consumption', 'total_consumption','energy_consumption_per_person']
 
 """
 COMPILING THE DATASET
@@ -90,9 +89,9 @@ logger.info("\n\nAdding climate / temperaure data from HADUK 60km grid dataset")
 file_name = "data/tas_hadukgrid_uk_60km_ann_202101-202112.nc"
 logger.info("Load temperaure measurement data and extract latitudes, longitudes, temperatures for each measurement")
 climate_data = Dataset(file_name)
-latitude = file_id.variables["latitude"][:,:]
-longitude = file_id.variables["longitude"][:,:]
-temps = file_id.variables["tas"][:,:]
+latitude = climate_data.variables["latitude"][:,:]
+longitude = climate_data.variables["longitude"][:,:]
+temps = climate_data.variables["tas"][:,:]
 logger.info(f"Loading each of the {len(temps[0])} temperature observations into a dictionary, removing null values") 
 lats = [np.mean(x) for x in latitude] # take average of temp from each point in grid
 longs = [np.mean(x) for x in longitude] 
@@ -123,7 +122,7 @@ logger.info(f"Check dataset shape: {df.shape}")
 
 ####################### ENERGY COST DATA ###################################
 logger.info("\n\nAdding energy cost data based on the electric vs gas usage of each LSOA")
-df["pct_electric"] = df['Electricity Consumption (kWh)'] / dfA['Total Energy Consumption (kWh)']
+df["pct_electric"] = df['elec_consumption'] / dfA['total_consumption']
 logger.info(f"Compute estimate for relative energy cost by LSOA, assuming gas price of {GAS_PRICE_PER_KWH}p per kwh and electric price of {ELECTRIC_PRICE_PER_KWH}p per kwh")
 df["energy_cost"] = [ELECTRIC_PRICE_PER_KWH * x + GAS_PRICE_PER_KWH * (1-x) for x in df["pct_electric"]]
 logger.info(f"Check dataset shape: {df.shape}")
