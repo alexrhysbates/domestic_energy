@@ -35,7 +35,7 @@ import geopy.distance
 
 
 #### LOADING THE DATA #####
-energy_consumption_data = pd.read_csv("raw/LSOA Energy Consumption Data.csv")
+energy_consumption_data = pd.read_csv("data/LSOA Energy Consumption Data.csv")
 
 ## COMPILING THE DATASET ##
 
