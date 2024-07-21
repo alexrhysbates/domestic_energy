@@ -79,3 +79,15 @@ plt.savefig("histogram_of_features.png")
 plt.close()
 
 ############# CAUSAL ANALYSIS #################################
+logging.info("\n\nRunning a causal analysis of the data")  
+model_df = df[['LA', 'politically_green','temperature','energy_cost',
+            'net_income','pct_economically_active', 'home_size',
+            'pct_home_occupancy', 'home_exposed_surfaces', 'home_age',
+            'energy_consumption_per_person']].copy()
+logging.info("Clean the data, drop any rows with nulls assume data is missing at random due to merging on LSOA. Fix dtype issues")
+model_df.dropna(how='any',axis=0, inplace=True)
+model_df["net_income"] = model_df["net_income"].astype(float)
+logging.info("Normalise column-wise on numeric columns")
+model_df.iloc[:,2:] = model_df.iloc[:,1:].apply(lambda x: (x-x.mean())/ x.std(), axis=0)
+logging.info("Convert Local authority to a categorical code column that we can index into")
+model_df['LA'] = model_df['LA'].astype('category').cat.codes
