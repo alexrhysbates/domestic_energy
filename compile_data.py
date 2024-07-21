@@ -58,7 +58,7 @@ LOADING THE DATA
 ----------------
 Read in the main dataset
 """
-logger.info("Loading main dataset on energy consumption")
+logger.info("\n\nLoading main dataset on energy consumption")
 df = pd.read_csv("data/LSOA Energy Consumption Data.csv")
 logger.info(f"Data loaded, {len(df)} rows")
 
@@ -182,7 +182,7 @@ building_type = building_type[["ecode", "bungalow_total", "flat_mais_total", "ho
                          "house_semi_total", "house_detached_total", "all_properties"]]
 building_type = building_type.replace("-","0")
 
-logger.info("Define the number of 'exposed surfaces' per building type - assumption that flats are more energy-efficient for this reason")
+logger.info("Define the number of 'exposed surfaces' per building type as a dictionary - assumption that flats are more energy-efficient for this reason")
 exposed_surfaces_per_type = {
     "bungalow_total": 5,
     "flat_mais_total": 2,
@@ -206,11 +206,61 @@ df = df.merge(building_type, on="LSOA", how="left")
 logger.info(f"Check dataset shape: {df.shape}")
 
 ####################### BUILDING AGE DATA ###################################
+logger.info("\n\nAdding in building age data from gov.uk council tax dataset on stock of properties for 2021")
+building_age = pd.read_csv("data/CTSOP_4_1_2021.csv")
+logger.info("Filtering down to LSOA only and all council tax bands, tidying up columns and replacing dodgy characters")
+building_age = building_age[(building_age.geography == "LSOA") & (building_age.band == "All")]
+building_age = building_age.replace("-","0")
 
+logger.info("Building age given in bands - estimate a rough mid-point for bands where applicable, as a dictionary.")
+build_dates = {
+    'bp_pre_1900': 1900,
+    'bp_1900_1918': 1910, 
+    'bp_1919_1929': 1925, 
+    'bp_1930_1939': 1935, 
+    'bp_1945_1954': 1950,
+    'bp_1955_1964': 1960, 
+    'bp_1965_1972': 1969, 
+    'bp_1973_1982': 1978, 
+    'bp_1983_1992': 1988,
+    'bp_1993_1999': 1996, 
+    'bp_2000_2008': 2004, 
+    'bp_2009': 2009, 
+    'bp_2010': 2010, 
+    'bp_2011': 2011,
+    'bp_2012': 2012, 
+    'bp_2013': 2013, 
+    'bp_2014': 2014, 
+    'bp_2015': 2015, 
+    'bp_2016': 2016, 
+    'bp_2017': 2017,
+    'bp_2018': 2018,
+    'bp_2019': 2019,
+    'bp_2020': 2020,
+    'bp_2021': 2021,
+    'bp_2022_2023': 2021,
+    'bp_unkw': 1900 # assume if unknown then likely very old
+}
 
+logger.info("Convert the building year count columns to integers")
+building_age[list(build_dates.keys())] = building_age[build_dates.keys()].astype(int)
+
+logger.info("Multiply build period count columns by the assumed build year to get totals")
+build_year = building_age[list(build_dates.keys())].mul(build_dates).sum(axis=1)
+logger.info("Compute the average age of buildings in each LSOA")
+totals = building_age[list(build_dates.keys())].sum(axis=1)
+building_age["home_age"]  = [2021-(x / y) for x,y in zip(build_year,  totals)]
+
+logger.info("Tidy up columns and merge with main dataset")
+building_age = building_age[["ecode", "home_age"]]
+building_age.columns = ["LSOA", "home_age"]
+df = df.merge(buildings2, on="LSOA", how="left")
 logger.info(f"Check dataset shape: {df.shape}")
 
-"""
-WRITING RESULTS
----------------
-"""
+####################### WRITE CLEAN RESULTS TO CSV #############################
+logger.info("\n\nClean up columns and write to local csv file")
+final_columns = ['LSOA', 'temperature','energy_cost', 'net_income', 'politically_green',
+       'pct_economically_active', 'home_size', 'pct_home_occupancy',
+       'home_exposed_surfaces', 'home_age', 'energy_consumption_per_person']
+df = df[final_columns]
+df.to_csv("compiled_data.csv")
