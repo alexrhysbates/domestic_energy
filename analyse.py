@@ -25,6 +25,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import geopandas as gpd
 import seaborn as sns
+import pymc as pm
+import arviz as az
 
 
 ############# READ / CLEAN DATASET ############################
