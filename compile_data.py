@@ -32,10 +32,10 @@ Load relevant python packages and set up a logger
 
 """
 import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-logger.info("Importing relevant python packages") 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(message)s", datefmt="%d-%b-%y %H:%M:%S"
+)
+logging.info("Importing relevant python packages") 
 import numpy as np
 import pandas as pd
 import geopy.distance
@@ -59,11 +59,11 @@ LOADING THE DATA
 ----------------
 Read in the main dataset
 """
-logger.info("\n\nLoading main dataset on energy consumption")
+logging.info("\n\nLoading main dataset on energy consumption")
 df = pd.read_csv("data/LSOA Energy Consumption Data.csv")
-logger.info(f"Data loaded, {len(df)} rows")
+logging.info(f"Data loaded, {len(df)} rows")
 
-logger.info("Tidying up the columns")
+logging.info("Tidying up the columns")
 df = df[['Local Authority Name', 'Local Authority Code', 'MSOA Name',
        'Middle Layer Super Output Area (MSOA) Code', 'LSOA Name',
        'Lower Layer Super Output Area (LSOA) Code', 'Latitude', 'Longitude',
@@ -85,14 +85,14 @@ Do this in phases, one dataset at a time.
 """
 
 ####################### CLIMATE / TEMPERATURE DATA ####################### 
-logger.info("\n\nAdding climate / temperaure data from HADUK 60km grid dataset")
+logging.info("\n\nAdding climate / temperaure data from HADUK 60km grid dataset")
 file_name = "data/tas_hadukgrid_uk_60km_ann_202101-202112.nc"
-logger.info("Load temperaure measurement data and extract latitudes, longitudes, temperatures for each measurement")
+logging.info("Load temperaure measurement data and extract latitudes, longitudes, temperatures for each measurement")
 climate_data = Dataset(file_name)
 latitude = climate_data.variables["latitude"][:,:]
 longitude = climate_data.variables["longitude"][:,:]
 temps = climate_data.variables["tas"][:,:]
-logger.info(f"Loading each of the {len(temps[0])} temperature observations into a dictionary, removing null values") 
+logging.info(f"Loading each of the {len(temps[0])} temperature observations into a dictionary, removing null values") 
 lats = [np.mean(x) for x in latitude] # take average of temp from each point in grid
 longs = [np.mean(x) for x in longitude] 
 ts = [np.mean(x) for x in temps[0]]
@@ -115,73 +115,73 @@ def find_closest_temp_measurement(this_point):
     """
     return temp_dict[min(temp_dict.keys(), key=lambda x: geopy.distance.geodesic(this_point, x))]
 
-logger.info("Generating tuples of (lat, long) in the main dataset, finding the nearest measurement by geodetic distance")
+logging.info("Generating tuples of (lat, long) in the main dataset, finding the nearest measurement by geodetic distance")
 df["coords"] = [(lat, long) for lat, long in zip(df.Latitude, df.Longitude)]
 df["temperature"] = [find_closest_temp_measurement(x) for x in df.coords]
-logger.info(f"Check dataset shape: {df.shape}")
+logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### ENERGY COST DATA ###################################
-logger.info("\n\nAdding energy cost data based on the electric vs gas usage of each LSOA")
+logging.info("\n\nAdding energy cost data based on the electric vs gas usage of each LSOA")
 df["pct_electric"] = df['elec_consumption'] / dfA['total_consumption']
-logger.info(f"Compute estimate for relative energy cost by LSOA, assuming gas price of {GAS_PRICE_PER_KWH}p per kwh and electric price of {ELECTRIC_PRICE_PER_KWH}p per kwh")
+logging.info(f"Compute estimate for relative energy cost by LSOA, assuming gas price of {GAS_PRICE_PER_KWH}p per kwh and electric price of {ELECTRIC_PRICE_PER_KWH}p per kwh")
 df["energy_cost"] = [ELECTRIC_PRICE_PER_KWH * x + GAS_PRICE_PER_KWH * (1-x) for x in df["pct_electric"]]
-logger.info(f"Check dataset shape: {df.shape}")
+logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### INCOME DATA ########################################
-logger.info("\n\nAdding net income data (post housing costs) per household from ONS, provided by MSOA")
-logger.info("Read in csv and tidy up columns")
+logging.info("\n\nAdding net income data (post housing costs) per household from ONS, provided by MSOA")
+logging.info("Read in csv and tidy up columns")
 income_data = pd.read_csv("data/net_income_after_housing_costs.csv")
 income_data = income_data[["MSOA code", "Net annual income after housing costs (£)"]].copy()
 income_data.columns = ["MSOA", "net_income"]
-logger.info("Merge with main dataset")
+logging.info("Merge with main dataset")
 df = df.merge(income_data, on="MSOA", how="left")
-logger.info(f"Check dataset shape: {df.shape}")
+logging.info(f"Check dataset shape: {df.shape}")
 
 
 ####################### ECONOMIC ACTIVITY DATA ##############################
-logger.info("\n\nAdding dataset on economic activity from ONS, by local authority")
-logger.info("Read in csv and tidy up columns")
+logging.info("\n\nAdding dataset on economic activity from ONS, by local authority")
+logging.info("Read in csv and tidy up columns")
 economic_activity = pd.read_csv("data/economic_activity.csv")
 economic_activity = economic_activity[["Area code", "Economically active: \nIn employment \n(including full-time students), \n2021\n(percent)"]]
 economic_activity.columns = ["LA", "pct_economically_active"]
-logger.info("Merge with main dataset")
+logging.info("Merge with main dataset")
 df = df.merge(economic_activity, on="LA", how="left")
-logger.info(f"Check dataset shape: {df.shape}")
+logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### HOME OCCUPANCY DATA ##################################
-logger.info("\n\nAdding dataset on home size and household occupancy from ONS for 2021. Features by LSOA")
-logger.info("Read in csv and tidy up columns")
+logging.info("\n\nAdding dataset on home size and household occupancy from ONS for 2021. Features by LSOA")
+logging.info("Read in csv and tidy up columns")
 households = pd.read_csv("data/RM202-Household-Size-By-Number-Of-Rooms-2021-lsoa-ONS.csv")
 households.rename(columns={"Lower layer Super Output Areas Code": "LSOA"}, inplace=True)
 
-logger.info("Compute the percentage of home occupancy and multiply by no. of observations of that occupancy")
+logging.info("Compute the percentage of home occupancy and multiply by no. of observations of that occupancy")
 households["pct_home_occupancy"] = households["Household size (5 categories) Code"] / households["Number of rooms (Valuation Office Agency) (6 categories) Code"]
 households["pct_home_occupancy_x_obs"] = households["pct_home_occupancy"] * households["Observation"]
 
-logger.info("Compute the size of each home multiplied by the no. of observations of that size.")
+logging.info("Compute the size of each home multiplied by the no. of observations of that size.")
 households["home_size_x_obs"] = households["Number of rooms (Valuation Office Agency) (6 categories) Code"] * households["Observation"]
 
-logger.info("Sum each of these computed fields for each LSOA and divide by the total number of homes in that LSOA")
+logging.info("Sum each of these computed fields for each LSOA and divide by the total number of homes in that LSOA")
 totals = households.groupby("LSOA")[["pct_home_occupancy_x_obs", "home_size_x_obs", "Observation"]].sum().reset_index()
 totals["home_size"] = totals["home_size_x_obs"] / totals["Observation"]
 totals["pct_home_occupancy"] = totals["pct_home_occupancy_x_obs"] / totals["Observation"]
-logger.info(f"Mean home size of {totals.home.size.mean()}. Mean occupancy % of {totals.pct_home_occupancy.mean()}")
+logging.info(f"Mean home size of {totals.home.size.mean()}. Mean occupancy % of {totals.pct_home_occupancy.mean()}")
 
-logger.info("Tidy up columns and merge with main dataset")
+logging.info("Tidy up columns and merge with main dataset")
 totals = totals[["LSOA", "home_size", "pct_home_occupancy"]]
 df = df.merge(totals, on="LSOA", how="left")
-logger.info(f"Check dataset shape: {df.shape}")
+logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### BUILDING TYPE DATA ##################################
-logger.info("\n\nAdding data on building type from gov.uk council tax dataset on stock of properties for 2021") 
+logging.info("\n\nAdding data on building type from gov.uk council tax dataset on stock of properties for 2021") 
 building_type = pd.read_csv("data/CTSOP_3_1_2021.csv")
-logger.info("Filtering down to LSOA only and all council tax bands, tidying up columns and replacing dodgy characters")
+logging.info("Filtering down to LSOA only and all council tax bands, tidying up columns and replacing dodgy characters")
 building_type = building_type[(building_type.geography == "LSOA") & (building_type.band == "All")]
 building_type = building_type[["ecode", "bungalow_total", "flat_mais_total", "house_terraced_total",
                          "house_semi_total", "house_detached_total", "all_properties"]]
 building_type = building_type.replace("-","0")
 
-logger.info("Define the number of 'exposed surfaces' per building type as a dictionary - assumption that flats are more energy-efficient for this reason")
+logging.info("Define the number of 'exposed surfaces' per building type as a dictionary - assumption that flats are more energy-efficient for this reason")
 exposed_surfaces_per_type = {
     "bungalow_total": 5,
     "flat_mais_total": 2,
@@ -190,28 +190,28 @@ exposed_surfaces_per_type = {
     "house_detached_total": 5
 }
 
-logger.info("Convert the building type count columns to integers")
+logging.info("Convert the building type count columns to integers")
 building_type[list(exposed_surfaces_per_type.keys())] = building_type[exposed_surfaces_per_type.keys()].astype(int)
 
-logger.info("Multiply building type count columns by the number of exposed surfaces to get totals")
+logging.info("Multiply building type count columns by the number of exposed surfaces to get totals")
 total_exposed_surfaces = building_type[list(exposed_surfaces_per_type.keys())].mul(exposed_surfaces_per_type).sum(axis=1)
-logger.info("Compute the average number of exposed surfaces for properties in that LSOA")
+logging.info("Compute the average number of exposed surfaces for properties in that LSOA")
 building_type["home_exposed_surfaces"]  = [x / int(y) for x,y in zip(total_exposed_surfaces,building_type["all_properties"])]
 
-logger.info("Tidy up columns and merge with main dataset")
+logging.info("Tidy up columns and merge with main dataset")
 building_type = building_type[["ecode", "home_exposed_surfaces"]]
 building_type.columns = ["LSOA", "home_exposed_surfaces"]
 df = df.merge(building_type, on="LSOA", how="left")
-logger.info(f"Check dataset shape: {df.shape}")
+logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### BUILDING AGE DATA ###################################
-logger.info("\n\nAdding in building age data from gov.uk council tax dataset on stock of properties for 2021")
+logging.info("\n\nAdding in building age data from gov.uk council tax dataset on stock of properties for 2021")
 building_age = pd.read_csv("data/CTSOP_4_1_2021.csv")
-logger.info("Filtering down to LSOA only and all council tax bands, tidying up columns and replacing dodgy characters")
+logging.info("Filtering down to LSOA only and all council tax bands, tidying up columns and replacing dodgy characters")
 building_age = building_age[(building_age.geography == "LSOA") & (building_age.band == "All")]
 building_age = building_age.replace("-","0")
 
-logger.info("Building age given in bands - estimate a rough mid-point for bands where applicable, as a dictionary.")
+logging.info("Building age given in bands - estimate a rough mid-point for bands where applicable, as a dictionary.")
 build_dates = {
     'bp_pre_1900': 1900,
     'bp_1900_1918': 1910, 
@@ -241,23 +241,23 @@ build_dates = {
     'bp_unkw': 1900 # assume if unknown then likely very old
 }
 
-logger.info("Convert the building year count columns to integers")
+logging.info("Convert the building year count columns to integers")
 building_age[list(build_dates.keys())] = building_age[build_dates.keys()].astype(int)
 
-logger.info("Multiply build period count columns by the assumed build year to get totals")
+logging.info("Multiply build period count columns by the assumed build year to get totals")
 build_year = building_age[list(build_dates.keys())].mul(build_dates).sum(axis=1)
-logger.info("Compute the average age of buildings in each LSOA")
+logging.info("Compute the average age of buildings in each LSOA")
 totals = building_age[list(build_dates.keys())].sum(axis=1)
 building_age["home_age"]  = [2021-(x / y) for x,y in zip(build_year,  totals)]
 
-logger.info("Tidy up columns and merge with main dataset")
+logging.info("Tidy up columns and merge with main dataset")
 building_age = building_age[["ecode", "home_age"]]
 building_age.columns = ["LSOA", "home_age"]
 df = df.merge(buildings2, on="LSOA", how="left")
-logger.info(f"Check dataset shape: {df.shape}")
+logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### WRITE CLEAN RESULTS TO CSV #############################
-logger.info("\n\nClean up columns and write to local csv file")
+logging.info("\n\nClean up columns and write to local csv file")
 final_columns = ['LSOA', 'temperature','energy_cost', 'net_income', 'politically_green',
        'pct_economically_active', 'home_size', 'pct_home_occupancy',
        'home_exposed_surfaces', 'home_age', 'energy_consumption_per_person']
