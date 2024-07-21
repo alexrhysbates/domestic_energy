@@ -52,11 +52,11 @@ las = las.merge(df_energy, on="LA", how="left")
 las.plot(column="energy_consumption_per_person", cmap="OrRd", edgecolor="k", legend=True)
 logging.info("Saving plot to a local .png")
 plt.savefig('energy_consumption_per_person_by_uk_local_authority.png')
+plt.close()
 
 
 ############# EXPLORATORY ANALYSIS ############################
 logging.info("Plot a correlation heatmap of all the features in the dataset")
-plt.clf()
 logging.info("Compute correlations of all the feature columns and plot using a seaborn heatmap")
 corr_data = df.drop(columns=['LA', 'MSOA', 'LSOA'], axis=1).corr()
 corr_heatmap = sns.heatmap(corr_data, cmap="crest", annot=True) 
@@ -64,6 +64,7 @@ corr_heatmap.set(xlabel="", ylabel="")
 corr_heatmap.xaxis.tick_bottom()
 plt.xticks(rotation=90)
 logging.info("Saving plot to a local .png")
-plt.savefig("correlations_of_features.png")
+plt.savefig("correlations_of_features.png", bbox_inches="tight")
+plt.close()
 
 ############# CAUSAL ANALYSIS #################################
