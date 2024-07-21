@@ -269,8 +269,10 @@ logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### WRITE CLEAN RESULTS TO CSV #############################
 logging.info("\n\nClean up columns and write to local csv file")
-final_columns = ['LSOA', 'temperature','energy_cost', 'net_income', 'politically_green',
-       'pct_economically_active', 'home_size', 'pct_home_occupancy',
-       'home_exposed_surfaces', 'home_age', 'energy_consumption_per_person']
+final_columns = ['LA', 'MSOA', 'LSOA', 'temperature','energy_cost', 'net_income', 
+       'politically_green','pct_economically_active', 'home_size', 'pct_home_occupancy',
+       'home_exposed_surfaces', 'home_age', 'energy_consumption_per_person'
+                ]
 df = df[final_columns]
-df.to_csv("compiled_data.csv")
+df.to_csv("compiled_data.csv", index=False)
+logging.info("DATA COMPILATION COMPLETE")
