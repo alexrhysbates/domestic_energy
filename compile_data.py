@@ -122,7 +122,7 @@ logging.info(f"Check dataset shape: {df.shape}")
 
 ####################### ENERGY COST DATA ###################################
 logging.info("\n\nAdding energy cost data based on the electric vs gas usage of each LSOA")
-df["pct_electric"] = df['elec_consumption'] / dfA['total_consumption']
+df["pct_electric"] = df['elec_consumption'] / df['total_consumption']
 logging.info(f"Compute estimate for relative energy cost by LSOA, assuming gas price of {GAS_PRICE_PER_KWH}p per kwh and electric price of {ELECTRIC_PRICE_PER_KWH}p per kwh")
 df["energy_cost"] = [ELECTRIC_PRICE_PER_KWH * x + GAS_PRICE_PER_KWH * (1-x) for x in df["pct_electric"]]
 logging.info(f"Check dataset shape: {df.shape}")
@@ -165,7 +165,7 @@ logging.info("Sum each of these computed fields for each LSOA and divide by the 
 totals = households.groupby("LSOA")[["pct_home_occupancy_x_obs", "home_size_x_obs", "Observation"]].sum().reset_index()
 totals["home_size"] = totals["home_size_x_obs"] / totals["Observation"]
 totals["pct_home_occupancy"] = totals["pct_home_occupancy_x_obs"] / totals["Observation"]
-logging.info(f"Mean home size of {totals.home.size.mean()}. Mean occupancy % of {totals.pct_home_occupancy.mean()}")
+logging.info(f"Mean home size of {totals.home_size.mean()}. Mean occupancy % of {totals.pct_home_occupancy.mean()}")
 
 logging.info("Tidy up columns and merge with main dataset")
 totals = totals[["LSOA", "home_size", "pct_home_occupancy"]]
