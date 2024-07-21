@@ -6,3 +6,4 @@ numpy
 pandas
 pymc
 seaborn
+scikit-learn
