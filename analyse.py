@@ -154,10 +154,9 @@ plt.close()
 
 logging.info("Look at the mean predictions for energy consumption from the model, \nand compute model goodness of fit with R-squared")
 with model:
-    predictions = pm.sample_posterior_predictive(trace, model, random_seed=RANDOM_SEED)
-    
-y_samples = predictions["posterior_predictive"].likelihood[0]
-y_pred = np.mean(y_samples, axis=0)
+    predictions = pm.sample_posterior_predictive(trace, model, random_seed=RANDOM_SEED) # sample from posterior for energy consumption
+y_pred = np.mean(predictions["posterior_predictive"].likelihood[0], axis=0) # compute the mean for each LSOA
 y_true = model_df.energy_consumption_per_person.values
-score = r2_score(y_true, y_pred)
+score = r2_score(y_true, y_pred) # calculate the R2 score for how well the model explains the data
 logging.info(f"R-squared for model goodness of fit = {round(score,2)}")
+logging.info("Analysis complete.")
