@@ -126,9 +126,10 @@ with pm.Model() as model:
 
     logging.info("Set uninformative priors for model parameters")
     a = pm.Normal("a", 0, 1)  # a = intercept
+    # b_* parameters are slope parameters in our linear model
     b_temperature = pm.Normal(
         "b_temperature", 0, 1
-    )  # b_* parameters are slope parameters in our linear model
+    )  
     b_energy_cost = pm.Normal("b_energy_cost", 0, 1)
     b_net_income = pm.Normal("b_net_income", 0, 1)
     b_pct_economically_active = pm.Normal("b_pct_economically_active", 0, 1)
@@ -140,7 +141,7 @@ with pm.Model() as model:
     sigma = pm.Exponential("sigma", 1)
 
     logging.info(
-        "Define mean energy consumption per person with a linear model of the features"
+        "Define mean energy consumption per person as a linear model of the features"
     )
     mu = pm.Deterministic(
         "mu",
@@ -176,7 +177,7 @@ logging.info(
 with model:
     trace = pm.sample(
         n_samples, tune=1000, random_seed=RANDOM_SEED
-    )  # take 2,000 samples from the posterior
+    )
 
 logging.info(
     "Plot the distribution of the regression coefficents and save to a local .png"
@@ -195,22 +196,25 @@ with model:
     )
 plt.axvline(x=0, color="black", linestyle="--", linewidth=0.5)
 plt.title("What is the isolated impact of each driver on energy consumption?")
-plt.savefig("regression_coefficients.png")
+plt.savefig("regression_coefficients.png", bbox_inches="tight")
 plt.close()
 
 logging.info(
     "Look at the mean predictions for energy consumption from the model, \nand compute model goodness of fit with R-squared"
 )
 with model:
+    # sample from posterior for energy consumption
     predictions = pm.sample_posterior_predictive(
         trace, model, random_seed=RANDOM_SEED
-    )  # sample from posterior for energy consumption
+    )
+# compute the mean for each LSOA
 y_pred = np.mean(
     predictions["posterior_predictive"].likelihood[0], axis=0
-)  # compute the mean for each LSOA
+)  
 y_true = model_df.energy_consumption_per_person.values
+# calculate the R2 score for how well the model explains the data
 score = r2_score(
     y_true, y_pred
-)  # calculate the R2 score for how well the model explains the data
+)  
 logging.info(f"R-squared for model goodness of fit = {round(score,2)}")
 logging.info("Analysis complete.")

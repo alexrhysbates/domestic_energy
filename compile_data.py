@@ -124,10 +124,10 @@ logging.info(
 lats = [np.mean(x) for x in latitude]  # take average of temp from each point in grid
 longs = [np.mean(x) for x in longitude]
 ts = [np.mean(x) for x in temps[0]]
-temp_dict = {co: t for co, t in zip(list(zip(lats, longs)), ts)}
+temp_dict = {coord: t for coord, t in zip(list(zip(lats, longs)), ts)}
 temp_dict = {
     k: v for k, v in temp_dict.items() if v > 0
-}  # some measurement points have null values
+} 
 
 
 def find_closest_temp_measurement(this_point):
@@ -150,7 +150,7 @@ def find_closest_temp_measurement(this_point):
 
 
 logging.info(
-    "Generating tuples of (lat, long) in the main dataset, finding the nearest measurement by geodetic distance"
+    "Generating tuples of (lat, long) in the main dataset, finding the nearest temperature measurement by geodetic distance"
 )
 df["coords"] = [(lat, long) for lat, long in zip(df.Latitude, df.Longitude)]
 df["temperature"] = [find_closest_temp_measurement(x) for x in df.coords]
@@ -324,7 +324,7 @@ logging.info(
 )
 building_age = pd.read_csv("data/CTSOP_4_1_2021.csv")
 logging.info(
-    "Filtering down to LSOA only and all council tax bands, tidying up columns and replacing dodgy characters"
+    "Filtering down to LSOA only and all council tax bands, tidying up columns and replacing weird characters"
 )
 building_age = building_age[
     (building_age.geography == "LSOA") & (building_age.band == "All")
