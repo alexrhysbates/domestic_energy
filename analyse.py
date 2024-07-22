@@ -27,6 +27,8 @@ import geopandas as gpd
 import seaborn as sns
 import pymc as pm
 import arviz as az
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import r2_score
 
 
 ############# READ / CLEAN DATASET ############################
@@ -87,5 +89,66 @@ model_df = df[['LA', 'politically_green','temperature','energy_cost',
 logging.info("Clean the data, drop any rows with nulls assume data is missing at random due to merging on LSOA. Fix dtype issues")
 model_df.dropna(how='any',axis=0, inplace=True)
 model_df["net_income"] = model_df["net_income"].astype(float)
-logging.info("Convert Local authority to a categorical code column that we can index into")
+logging.info("Convert Local authority to a categorical code column that we can index into, if needed")
 model_df['LA'] = model_df['LA'].astype('category').cat.codes
+
+logging.info("Normalising continuous variables to z-scores with mean 0 and variance 1")
+scaler = StandardScaler()
+scaler.fit(model_df.iloc[:,2:])
+model_df.iloc[:,2:] = scaler.transform(model_df.iloc[:,2:])
+logging.info(f"Model data prepared, with shape {model_df.shape}. And features: {model_df.columns[1:-1]}. And target variable: {model_df.columns[-1]}")
+
+logging.info("Defining the probablistic model in pymc")
+with pm.Model() as model:
+    
+    logging.info("Set uninformative priors for model parameters")
+    a = pm.Normal('a', 0, 1) # a = intercept
+    b_temperature = pm.Normal('b_temperature', 0, 1) # b_* parameters are slope parameters in our linear model
+    b_energy_cost = pm.Normal('b_energy_cost', 0, 1)
+    b_net_income = pm.Normal('b_net_income', 0, 1)
+    b_pct_economically_active = pm.Normal('b_pct_economically_active', 0, 1)
+    b_politically_green = pm.Normal('b_politically_green', 0, 1)
+    b_home_size = pm.Normal('b_home_size', 0, 1)
+    b_pct_home_occupancy = pm.Normal('b_pct_home_occupancy', 0, 1)
+    b_home_exposed_surfaces = pm.Normal('b_home_exposed_surfaces', 0, 1)
+    b_home_age = pm.Normal('b_home_age', 0, 1)
+    sigma = pm.Exponential('sigma', 1)
+    
+    logging.info("Define mean energy consumption per person with a linear model of the features")
+    mu = pm.Deterministic('mu', a + 
+                          b_politically_green * model_df.politically_green.values + 
+                          b_temperature * model_df.temperature.values +
+                          b_energy_cost * model_df.energy_cost.values +
+                          b_net_income * model_df.net_income.values +
+                          b_pct_economically_active * model_df.pct_economically_active.values +
+                          b_home_size * model_df.home_size.values +
+                          b_pct_home_occupancy * model_df.pct_home_occupancy.values +
+                          b_home_exposed_surfaces * model_df.home_exposed_surfaces.values +
+                          b_home_age * model_df.home_age.values
+                          ) 
+    
+    logging.info("Our likelihood is the based on an assumed normal distribution of energy consumption with its mean defined by a linear model") 
+    likelihood = pm.Normal('likelihood', mu = mu, sigma = sigma, observed = model_df.energy_consumption_per_person.values)
+    
+logging.info("The posterior is analytically intractable, so we approximate by sampling using MCMC")
+n_samples = 2_000
+logging.info(f"Take {n_samples} samples from the posterior distribution for each model parameter")  
+with model:
+    trace = pm.sample(n_samples, tune=1000) # take 2,000 samples from the posterior
+    
+logging.info("Plot the distribution of the regression coefficents") 
+with model:
+    az.plot_forest(trace,
+                   kind='ridgeplot',
+                   filter_vars="regex",
+                   var_names=["^b"], # only include b_* parameters
+                   hdi_prob=0.99, # capture the highest density 99% of each param distribution
+                   textsize = 8.0,
+                   figsize=(5, 3),
+                   colors="purple",
+                   combined=True)
+plt.axvline(x=0, color='black', linestyle='--', linewidth=0.5)
+plt.title("What is the isolated impact of each driver on energy consumption?")
+plt.figsave("regression_coefficients.png")
+plt.close()
+
