@@ -29,7 +29,7 @@ import pymc as pm
 import arviz as az
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score
-
+RANDOM_SEED = 1999
 
 ############# READ / CLEAN DATASET ############################
 logging.info("Reading in data")
@@ -96,7 +96,7 @@ logging.info("Normalising continuous variables to z-scores with mean 0 and varia
 scaler = StandardScaler()
 scaler.fit(model_df.iloc[:,2:])
 model_df.iloc[:,2:] = scaler.transform(model_df.iloc[:,2:])
-logging.info(f"Model data prepared, with shape {model_df.shape}. And features: {model_df.columns[1:-1]}. And target variable: {model_df.columns[-1]}")
+logging.info(f"Model data prepared, with shape {model_df.shape}. \nAnd features: {model_df.columns[1:-1]}. \nAnd target variable: {model_df.columns[-1]}")
 
 logging.info("Defining the probablistic model in pymc")
 with pm.Model() as model:
@@ -132,11 +132,11 @@ with pm.Model() as model:
     
 logging.info("The posterior is analytically intractable, so we approximate by sampling using MCMC")
 n_samples = 2_000
-logging.info(f"Take {n_samples} samples from the posterior distribution for each model parameter")  
+logging.info(f"Take {n_samples} samples from the posterior distribution for each model parameter. \nNote that this may take a few minutes to run")  
 with model:
-    trace = pm.sample(n_samples, tune=1000) # take 2,000 samples from the posterior
+    trace = pm.sample(n_samples, tune=1000, random_seed=RANDOM_SEED) # take 2,000 samples from the posterior
     
-logging.info("Plot the distribution of the regression coefficents") 
+logging.info("Plot the distribution of the regression coefficents and save to a local .png") 
 with model:
     az.plot_forest(trace,
                    kind='ridgeplot',
@@ -149,6 +149,15 @@ with model:
                    combined=True)
 plt.axvline(x=0, color='black', linestyle='--', linewidth=0.5)
 plt.title("What is the isolated impact of each driver on energy consumption?")
-plt.figsave("regression_coefficients.png")
+plt.savefig("regression_coefficients.png")
 plt.close()
 
+logging.info("Look at the mean predictions for energy consumption from the model, \nand compute model goodness of fit with R-squared")
+with model:
+    predictions = pm.sample_posterior_predictive(trace, model, random_seed=RANDOM_SEED)
+    
+y_samples = predictions["posterior_predictive"].likelihood[0]
+y_pred = np.mean(y_samples, axis=0)
+y_true = model_df.energy_consumption_per_person.values
+score = r2_score(y_true, y_pred)
+logging.info(f"R-squared for model goodness of fit = {round(score,2)}")
