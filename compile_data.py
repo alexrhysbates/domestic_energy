@@ -125,9 +125,7 @@ lats = [np.mean(x) for x in latitude]  # take average of temp from each point in
 longs = [np.mean(x) for x in longitude]
 ts = [np.mean(x) for x in temps[0]]
 temp_dict = {coord: t for coord, t in zip(list(zip(lats, longs)), ts)}
-temp_dict = {
-    k: v for k, v in temp_dict.items() if v > 0
-} 
+temp_dict = {k: v for k, v in temp_dict.items() if v > 0}
 
 
 def find_closest_temp_measurement(this_point):

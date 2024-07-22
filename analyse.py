@@ -127,9 +127,7 @@ with pm.Model() as model:
     logging.info("Set uninformative priors for model parameters")
     a = pm.Normal("a", 0, 1)  # a = intercept
     # b_* parameters are slope parameters in our linear model
-    b_temperature = pm.Normal(
-        "b_temperature", 0, 1
-    )  
+    b_temperature = pm.Normal("b_temperature", 0, 1)
     b_energy_cost = pm.Normal("b_energy_cost", 0, 1)
     b_net_income = pm.Normal("b_net_income", 0, 1)
     b_pct_economically_active = pm.Normal("b_pct_economically_active", 0, 1)
@@ -175,9 +173,7 @@ logging.info(
     f"Take {n_samples} samples from the posterior distribution for each model parameter. \nNote that this may take a few minutes to run"
 )
 with model:
-    trace = pm.sample(
-        n_samples, tune=1000, random_seed=RANDOM_SEED
-    )
+    trace = pm.sample(n_samples, tune=1000, random_seed=RANDOM_SEED)
 
 logging.info(
     "Plot the distribution of the regression coefficents and save to a local .png"
@@ -204,17 +200,11 @@ logging.info(
 )
 with model:
     # sample from posterior for energy consumption
-    predictions = pm.sample_posterior_predictive(
-        trace, model, random_seed=RANDOM_SEED
-    )
+    predictions = pm.sample_posterior_predictive(trace, model, random_seed=RANDOM_SEED)
 # compute the mean for each LSOA
-y_pred = np.mean(
-    predictions["posterior_predictive"].likelihood[0], axis=0
-)  
+y_pred = np.mean(predictions["posterior_predictive"].likelihood[0], axis=0)
 y_true = model_df.energy_consumption_per_person.values
 # calculate the R2 score for how well the model explains the data
-score = r2_score(
-    y_true, y_pred
-)  
+score = r2_score(y_true, y_pred)
 logging.info(f"R-squared for model goodness of fit = {round(score,2)}")
 logging.info("Analysis complete.")
