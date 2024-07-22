@@ -3,7 +3,7 @@ Script to analyse energy consumption data.
 
 Compiled data can be found in compiled_data.csv. The script works by first reading in this data.
 
-Run `pip install -r requirements.txt` installs all necessary dependencies for this project.
+Running `pip install -r requirements.txt` installs all necessary dependencies for this project.
 
 There are 4 components to the analysis in this script:
 
@@ -94,7 +94,7 @@ model_df['LA'] = model_df['LA'].astype('category').cat.codes
 
 logging.info("Normalising continuous variables to z-scores with mean 0 and variance 1")
 scaler = StandardScaler()
-scaler.fit(model_df.iloc[:,2:])
+scaler.fit(model_df.iloc[:,2:]) # don't normalise non-continuous "LA" or "politically_green" features
 model_df.iloc[:,2:] = scaler.transform(model_df.iloc[:,2:])
 logging.info(f"Model data prepared, with shape {model_df.shape}. \nAnd features: {model_df.columns[1:-1]}. \nAnd target variable: {model_df.columns[-1]}")
 
@@ -127,7 +127,7 @@ with pm.Model() as model:
                           b_home_age * model_df.home_age.values
                           ) 
     
-    logging.info("Our likelihood is the based on an assumed normal distribution of energy consumption with its mean defined by a linear model") 
+    logging.info("Our likelihood is the based on an assumed normal distribution of energy consumption \nwith its mean defined by a linear model") 
     likelihood = pm.Normal('likelihood', mu = mu, sigma = sigma, observed = model_df.energy_consumption_per_person.values)
     
 logging.info("The posterior is analytically intractable, so we approximate by sampling using MCMC")
